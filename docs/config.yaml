@@ -1,0 +1,14 @@
+baseURL: https://retail-cortex.github.io/modenv/
+title: modenv Documentation
+theme: book
+disableKinds: ['taxonomy']
+disablePathToLower: true
+enableGitInfo: false
+pygmentsCodeFences: true
+
+params:
+  BookToC: 3
+  BookSection: docs
+  BookEnableJS: true
+  BookRepo: https://github.com/retail-cortex/modenv
+  BookDateFormat: 'Jan 2, 2006'

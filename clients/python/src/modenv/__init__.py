@@ -12,21 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_go//go:def.bzl", "go_binary", "go_library")
+"""modenv: Hierarchical TOML configuration and environment loader."""
 
-go_library(
-    name = "modenv_lib",
-    srcs = ["main.go"],
-    importpath = "github.com/rrmcguinness/modenv/cmd/modenv",
-    visibility = ["//visibility:private"],
-    deps = [
-        "//pkg/modenv",
-        "@com_github_burntsushi_toml//:toml",
-    ],
+from modenv.modenv import (
+    EnvManager,
+    SecretsStoreConfig,
+    decrypt_pks_secret,
+    decrypt_secret,
+    encrypt_legacy_secret,
+    encrypt_pks_secret,
+    encrypt_secret,
+    load,
+    resolve_cloud_secret,
+    set_cloud_secret_resolver,
 )
 
-go_binary(
-    name = "modenv",
-    embed = [":modenv_lib"],
-    visibility = ["//visibility:public"],
-)
+__all__ = [
+    "EnvManager",
+    "SecretsStoreConfig",
+    "decrypt_pks_secret",
+    "decrypt_secret",
+    "encrypt_legacy_secret",
+    "encrypt_pks_secret",
+    "encrypt_secret",
+    "load",
+    "resolve_cloud_secret",
+    "set_cloud_secret_resolver",
+]

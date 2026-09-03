@@ -12,9 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "test_configs",
-    srcs = glob(["configs/**"]),
-)
+exports_files(["go.mod", "go.sum"])

@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+load("@rules_go//go:def.bzl", "go_test")
 
-filegroup(
-    name = "test_configs",
-    srcs = glob(["configs/**"]),
+go_test(
+    name = "integration_test",
+    srcs = ["integration_test.go"],
+    data = ["//test:test_configs"],
+    deps = [
+        "//clients/go/pkg/modenv",
+        "@com_github_stretchr_testify//assert",
+    ],
 )

@@ -1,0 +1,125 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Multi-Target Go CLI & Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Bazelisk
+        uses: bazelbuild/setup-bazelisk@v3
+
+      - name: Cache Bazel Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-release-${{ hashFiles('**/MODULE.bazel', '**/BUILD.bazel') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-release-
+
+      - name: Verify Go Test Suite via Bazel
+        run: bazel test //clients/go/... //cmd/cli/...
+
+      - name: Sanity Check Host Binary
+        run: |
+          bazel build //cmd/cli
+          ./bazel-bin/cmd/cli/cli_/cli --help
+
+      - name: Cross-Compile Go CLI for All Target Platforms
+        run: |
+          mkdir -p release-assets
+
+          # Compile Linux AMD64
+          bazel build --platforms=@rules_go//go/toolchain:linux_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli release-assets/modenv-linux-amd64
+          chmod +x release-assets/modenv-linux-amd64
+          tar -czf release-assets/modenv-linux-amd64.tar.gz -C release-assets modenv-linux-amd64
+
+          # Compile Linux ARM64
+          bazel build --platforms=@rules_go//go/toolchain:linux_arm64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli release-assets/modenv-linux-arm64
+          chmod +x release-assets/modenv-linux-arm64
+          tar -czf release-assets/modenv-linux-arm64.tar.gz -C release-assets modenv-linux-arm64
+
+          # Compile Darwin (macOS) Apple Silicon
+          bazel build --platforms=@rules_go//go/toolchain:darwin_arm64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli release-assets/modenv-darwin-arm64
+          chmod +x release-assets/modenv-darwin-arm64
+          tar -czf release-assets/modenv-darwin-arm64.tar.gz -C release-assets modenv-darwin-arm64
+
+          # Compile Darwin (macOS) Intel
+          bazel build --platforms=@rules_go//go/toolchain:darwin_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli release-assets/modenv-darwin-amd64
+          chmod +x release-assets/modenv-darwin-amd64
+          tar -czf release-assets/modenv-darwin-amd64.tar.gz -C release-assets modenv-darwin-amd64
+
+          # Compile Windows AMD64
+          bazel build --platforms=@rules_go//go/toolchain:windows_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli.exe release-assets/modenv-windows-amd64.exe
+          zip -j release-assets/modenv-windows-amd64.zip release-assets/modenv-windows-amd64.exe
+
+          # Generate SHA256 Checksums
+          cd release-assets
+          sha256sum modenv-linux-amd64 modenv-linux-amd64.tar.gz \
+                    modenv-linux-arm64 modenv-linux-arm64.tar.gz \
+                    modenv-darwin-arm64 modenv-darwin-arm64.tar.gz \
+                    modenv-darwin-amd64 modenv-darwin-amd64.tar.gz \
+                    modenv-windows-amd64.exe modenv-windows-amd64.zip > checksums.txt
+          cat checksums.txt
+          cd ..
+
+      - name: Upload Release Assets Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-assets/modenv-linux-amd64
+            release-assets/modenv-linux-amd64.tar.gz
+            release-assets/modenv-linux-arm64
+            release-assets/modenv-linux-arm64.tar.gz
+            release-assets/modenv-darwin-arm64
+            release-assets/modenv-darwin-arm64.tar.gz
+            release-assets/modenv-darwin-amd64
+            release-assets/modenv-darwin-amd64.tar.gz
+            release-assets/modenv-windows-amd64.exe
+            release-assets/modenv-windows-amd64.zip
+            release-assets/checksums.txt
+          generate_release_notes: true
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}

@@ -1,0 +1,15 @@
+<script src="{{ "mermaid.min.js" | relURL }}"></script>
+<script>
+  if (typeof mermaid === "undefined") {
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
+    s.onload = function() {
+      if (typeof mermaid !== "undefined") {
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+      }
+    };
+    document.head.appendChild(s);
+  } else {
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+  }
+</script>

@@ -26,7 +26,7 @@ import (
 func getTestConfigsDir() string {
 	dir, err := os.Getwd()
 	if err != nil {
-		return "configs" // fallback
+		return "test/configs" // fallback
 	}
 	for {
 		// Check for test/configs (when run from workspace root)
@@ -45,7 +45,7 @@ func getTestConfigsDir() string {
 		}
 		dir = parent
 	}
-	return "configs"
+	return "test/configs"
 }
 
 func TestIntegrationEnvManager(t *testing.T) {

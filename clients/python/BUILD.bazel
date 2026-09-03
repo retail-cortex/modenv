@@ -12,9 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
 package(default_visibility = ["//visibility:public"])
 
-filegroup(
-    name = "test_configs",
-    srcs = glob(["configs/**"]),
+py_library(
+    name = "modenv",
+    srcs = glob(["src/modenv/**/*.py"]),
+    imports = ["src"],
+)
+
+py_test(
+    name = "test_modenv",
+    srcs = ["tests/test_modenv.py"],
+    data = ["//test:test_configs"],
+    imports = ["src", "tests"],
+    main = "tests/test_modenv.py",
+    deps = [":modenv"],
+)
+
+py_test(
+    name = "test_integration",
+    srcs = ["tests/test_integration.py"],
+    data = ["//test:test_configs"],
+    imports = ["src", "tests"],
+    main = "tests/test_integration.py",
+    deps = [":modenv"],
 )

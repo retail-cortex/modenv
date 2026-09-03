@@ -12,13 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
-# gazelle:prefix github.com/rrmcguinness/modenv
-gazelle(name = "gazelle")
+go_library(
+    name = "cli_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rrmcguinness/modenv/cmd/cli",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//clients/go/pkg/modenv",
+        "@com_github_burntsushi_toml//:toml",
+    ],
+)
+
+go_binary(
+    name = "cli",
+    embed = [":cli_lib"],
+    visibility = ["//visibility:public"],
+)
 
 alias(
     name = "modenv",
-    actual = "//cmd/cli",
+    actual = ":cli",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cli_test",
+    srcs = ["main_test.go"],
+    embed = [":cli_lib"],
+    deps = [
+        "//clients/go/pkg/modenv",
+        "@com_github_stretchr_testify//assert",
+    ],
 )

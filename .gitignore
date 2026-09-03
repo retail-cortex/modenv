@@ -10,6 +10,22 @@
 # Bazel artifacts
 /bazel-*
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Java
+target/
+*.class
+
+# Node / TypeScript
+node_modules/
+dist/
+
 # Operating System Files
 .DS_Store
 Thumbs.db

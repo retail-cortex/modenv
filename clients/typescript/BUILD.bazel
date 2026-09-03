@@ -12,9 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
-    name = "test_configs",
-    srcs = glob(["configs/**"]),
+    name = "typescript_sources",
+    srcs = glob([
+        "src/**",
+        "test/**",
+        "package.json",
+        "tsconfig.json",
+        "node_modules/**",
+    ]),
+)
+
+sh_test(
+    name = "modenv_test",
+    srcs = ["test.sh"],
+    data = [
+        ":typescript_sources",
+        "//test:test_configs",
+    ],
 )

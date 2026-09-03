@@ -1,3 +1,17 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: CI
 
 on:
@@ -11,11 +25,11 @@ on:
       - 'coverage.svg'
 
 jobs:
-  build-and-test:
-    name: Build, Test, and Coverage
+  test-and-build:
+    name: Polyglot Test and Build
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,10 +39,43 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'clients/typescript/pnpm-lock.yaml'
+
+      - name: Install TypeScript Dependencies
+        run: |
+          cd clients/typescript
+          pnpm install --frozen-lockfile
+
       - name: Install Bazelisk
         uses: bazelbuild/setup-bazelisk@v3
 
-      - name: Cache Bazel Repository Cache
+      - name: Cache Bazel Cache
         uses: actions/cache@v4
         with:
           path: |
@@ -37,25 +84,93 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
-      - name: Run Standard Go Tests
-        run: make test
+      - name: Run All Polyglot Tests with Bazel
+        run: bazel test //...
 
-      - name: Bazel Build All Targets
+      - name: Build All Monorepo Targets with Bazel
         run: bazel build //...
 
-      - name: Bazel Test and Generate Coverage
+      - name: Cross-Compile Go CLI for Multiple Target Platforms
         run: |
-          bazel coverage --combined_report=lcov //...
-          # Output is placed at bazel-out/_coverage/_coverage_report.dat
+          mkdir -p dist/binaries
+          
+          # Linux AMD64
+          bazel build --platforms=@rules_go//go/toolchain:linux_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli dist/binaries/modenv-linux-amd64
+          
+          # Linux ARM64
+          bazel build --platforms=@rules_go//go/toolchain:linux_arm64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli dist/binaries/modenv-linux-arm64
+          
+          # Darwin (macOS) Apple Silicon
+          bazel build --platforms=@rules_go//go/toolchain:darwin_arm64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli dist/binaries/modenv-darwin-arm64
+          
+          # Darwin (macOS) Intel
+          bazel build --platforms=@rules_go//go/toolchain:darwin_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli dist/binaries/modenv-darwin-amd64
+          
+          # Windows AMD64
+          bazel build --platforms=@rules_go//go/toolchain:windows_amd64 //cmd/cli
+          cp bazel-bin/cmd/cli/cli_/cli.exe dist/binaries/modenv-windows-amd64.exe
 
-      - name: Generate Coverage Badge
-        uses: GoogleCloudPlatform/lcov-coverage-badge@v1.0.0
-        with:
-          file: bazel-out/_coverage/_coverage_report.dat
+          ls -la dist/binaries/
 
-      - name: Upload Coverage Reports
-        uses: codecov/codecov-action@v4
+      - name: Upload Compiled CLI Binaries
+        uses: actions/upload-artifact@v4
         with:
-          files: bazel-out/_coverage/_coverage_report.dat
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: modenv-cli-binaries
+          path: dist/binaries/
+          retention-days: 7
+
+  docs:
+    name: Build & Validate Documentation
+    runs-on: ubuntu-latest
+    needs: [test-and-build]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Bazelisk
+        uses: bazelbuild/setup-bazelisk@v3
+
+      - name: Cache Bazel Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-docs-${{ hashFiles('**/MODULE.bazel', '**/BUILD.bazel') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-docs-
+
+      - name: Validate Hugo Site via Bazel
+        run: bazel test //docs:site_test
+
+      - name: Build Hugo Site Output
+        run: |
+          bazel build //docs:site
+          mkdir -p _site
+          cp -rL bazel-bin/docs/site/. _site/
+          chmod -R u+w _site
+          touch _site/.nojekyll
+
+      - name: Upload Pages Artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        id: deployment
+        uses: actions/deploy-pages@v4
