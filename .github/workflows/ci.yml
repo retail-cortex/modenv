@@ -29,7 +29,7 @@ jobs:
     name: Polyglot Test and Build
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -84,8 +84,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bazel-
 
-      - name: Run All Polyglot Tests with Bazel
-        run: bazel test //...
+      - name: Run All Polyglot Tests & Coverage with Bazel
+        run: bazel coverage //...
+
+      - name: Generate Coverage Badge
+        if: github.ref == 'refs/heads/main'
+        uses: retail-cortex/lcov-coverage-badge@main
+        with:
+          file: bazel-out/_coverage/_coverage_report.dat
+          access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build All Monorepo Targets with Bazel
         run: bazel build //...

@@ -2,6 +2,9 @@
 
 Hierarchical TOML configuration, secret decryption, and environment management for Go, Python, Java, and TypeScript.
 
+[![CI](https://github.com/retail-cortex/modenv/actions/workflows/ci.yml/badge.svg)](https://github.com/retail-cortex/modenv/actions/workflows/ci.yml)
+[![Coverage](coverage.svg)](https://github.com/retail-cortex/modenv)
+[![Release](https://img.shields.io/github/v/release/retail-cortex/modenv?color=blue)](https://github.com/retail-cortex/modenv/releases)
 [![Documentation](https://img.shields.io/badge/docs-retail--cortex.github.io%2Fmodenv-blue.svg)](https://retail-cortex.github.io/modenv/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
