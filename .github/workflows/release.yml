@@ -18,12 +18,13 @@ on:
   push:
     tags:
       - 'v*'
+      - 'modenv-*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version tag (e.g. v0.1.0)'
-        required: true
-        default: 'v0.1.0'
+        description: 'Release version tag (defaults to modenv-DD-MM-YYYY if blank)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -35,6 +36,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Determine Release Tag
+        id: tag_step
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="modenv-$(date +'%d-%m-%Y')"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Resolved release tag: ${TAG}"
 
       - name: Install Bazelisk
         uses: bazelbuild/setup-bazelisk@v3
@@ -122,4 +136,5 @@ jobs:
             release-assets/modenv-windows-amd64.zip
             release-assets/checksums.txt
           generate_release_notes: true
-          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          tag_name: ${{ steps.tag_step.outputs.tag }}
+          name: ${{ steps.tag_step.outputs.tag }}

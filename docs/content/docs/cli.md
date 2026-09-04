@@ -128,3 +128,21 @@ bazel build --platforms=@rules_go//go/toolchain:darwin_amd64 //cmd/cli
 bazel build --platforms=@rules_go//go/toolchain:windows_amd64 //cmd/cli
 ```
 All release bundles include automated SHA256 checksum manifests (`checksums.txt`) verified during continuous integration.
+
+### Initiating a Release
+
+To trigger an automated release with the date-stamped tag pattern (`modenv-<day>-<month>-<year>`):
+
+```bash
+# 1. Generate the date-stamped tag (e.g. modenv-03-09-2026)
+TAG="modenv-$(date +'%d-%m-%Y')"
+
+# 2. Tag current commit and push to remote
+git tag -a "$TAG" -m "Release $TAG"
+git push origin "$TAG"
+```
+
+Alternatively, dispatch the workflow manually via GitHub CLI (automatically defaults to today's date if no tag is passed):
+```bash
+gh workflow run release.yml
+```
