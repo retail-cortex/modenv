@@ -10,8 +10,6 @@ Hierarchical TOML configuration, secret decryption, and environment management f
 
 `modenv` simplifies enterprise application configuration by merging cascading configuration layers, dynamically resolving runtime environment overrides, and automatically decrypting stored secrets on the fly.
 
-> **Full Documentation & Integration Guides:** [https://retail-cortex.github.io/modenv/](https://retail-cortex.github.io/modenv/)
-
 ## Authors
 - **Ryan McGuinness** (Lead Engineer)
 - **Hanna** (AI Pair Programmer)
