@@ -4,17 +4,46 @@ build-backend = "hatchling.build"
 
 [project]
 name = "modenv-rc"
-version = "0.0.1"
-description = "Hierarchical TOML configuration and environment loader"
+version = "0.0.2"
+description = "Hierarchical TOML configuration and environment loader with smart secret decryption"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [
     { name = "Ryan McGuinness" },
 ]
+keywords = [
+    "config",
+    "configuration",
+    "toml",
+    "environment",
+    "secrets",
+    "dataclass",
+    "modenv",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Typing :: Typed",
+]
 dependencies = [
     "tomli-w>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://retail-cortex.github.io/modenv/"
+Documentation = "https://retail-cortex.github.io/modenv/docs/python/integration/"
+Repository = "https://github.com/retail-cortex/modenv"
+Issues = "https://github.com/retail-cortex/modenv/issues"
+Releases = "https://github.com/retail-cortex/modenv/releases"
 
 [dependency-groups]
 dev = [
