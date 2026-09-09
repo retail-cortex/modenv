@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "modenv"
+name = "modenv-rc"
 version = "0.0.1"
 description = "Hierarchical TOML configuration and environment loader"
 readme = "README.md"

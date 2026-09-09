@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.environment || 'pypi' }}
-      url: ${{ (github.event.inputs.environment == 'testpypi') && 'https://test.pypi.org/p/modenv' || 'https://pypi.org/p/modenv' }}
+      url: ${{ (github.event.inputs.environment == 'testpypi') && 'https://test.pypi.org/p/modenv-rc' || 'https://pypi.org/p/modenv-rc' }}
     permissions:
       id-token: write # Mandatory for PyPI OIDC Trusted Publishing
     steps:
