@@ -7,6 +7,20 @@ weight: 1
 
 ## Installation
 
+### From PyPI (Recommended)
+The package is published to PyPI as [**`modenv-rc`**](https://pypi.org/project/modenv-rc/):
+
+```bash
+pip install modenv-rc
+# or
+uv add modenv-rc
+```
+
+Import in Python code:
+```python
+from modenv import load, EnvManager
+```
+
 ### With Bazel
 Add `modenv` as a dependency in your `BUILD.bazel`:
 ```python
@@ -19,10 +33,8 @@ py_library(
 )
 ```
 
-### With uv / pip
+### Local Monorepo Editable Install
 ```bash
-uv add modenv
-# or
 pip install -e clients/python/
 ```
 

@@ -30,6 +30,6 @@ graph TD
 
 ### Language Integration Guides
 - [Go Integration]({{< relref "/docs/go/integration" >}}): Struct binding, library usage, and test fixtures.
-- [Python Integration]({{< relref "/docs/python/integration" >}}): Dataclass mapping, uv setup, and typed access.
+- [Python Integration]({{< relref "/docs/python/integration" >}}): Dataclass mapping, PyPI distribution ([`modenv-rc`](https://pypi.org/project/modenv-rc/)), and typed access.
 - [Java Integration]({{< relref "/docs/java/integration" >}}): POJO binding, Maven artifacts, and reflection mapping.
 - [TypeScript Integration]({{< relref "/docs/typescript/integration" >}}): ESM interface mapping, pnpm packages, and zero-dependency runtime.

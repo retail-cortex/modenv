@@ -4,6 +4,7 @@ Hierarchical TOML configuration, secret decryption, and environment management f
 
 [![CI](https://github.com/retail-cortex/modenv/actions/workflows/ci.yml/badge.svg)](https://github.com/retail-cortex/modenv/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/retail-cortex/modenv?color=blue)](https://github.com/retail-cortex/modenv/releases)
+[![PyPI](https://img.shields.io/pypi/v/modenv-rc?color=blue&label=PyPI%3A%20modenv-rc)](https://pypi.org/project/modenv-rc/)
 [![Documentation](https://img.shields.io/badge/docs-retail--cortex.github.io%2Fmodenv-blue.svg)](https://retail-cortex.github.io/modenv/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Coverage](coverage.svg)](https://github.com/retail-cortex/modenv)
@@ -46,13 +47,13 @@ graph TD
 
 ## Language Ecosystems & Matrix
 
-| Component | Directory | Bazel Target | CLI / Test Target |
+| **Component** | **Directory** | **Bazel Target** | **Package / Test Target** |
 | :--- | :--- | :--- | :--- |
 | **Universal CLI** | [`cmd/cli/`](cmd/cli/) | `//cmd/cli` | `//cmd/cli:cli_test` |
 | **Go Client** | [`clients/go/`](clients/go/) | `//clients/go/pkg/modenv` | `//clients/go/...` |
-| **Python Client** | [`clients/python/`](clients/python/) | `//clients/python:modenv` | `//clients/python/...` |
+| **Python Client** | [`clients/python/`](clients/python/) | `//clients/python:modenv` | [PyPI: `modenv-rc`](https://pypi.org/project/modenv-rc/) / `//clients/python/...` |
 | **Java Client** | [`clients/java/`](clients/java/) | `//clients/java:modenv` | `//clients/java/...` |
-| **TypeScript Client** | [`clients/typescript/`](clients/typescript/) | `//clients/typescript:modenv_sources` | `//clients/typescript:modenv_test` |
+| **TypeScript Client** | [`clients/typescript/`](clients/typescript/) | `//clients/typescript:typescript_lib` | `//clients/typescript:modenv_test` |
 | **Test Configs** | [`test/configs/`](test/configs/) | `//test:test_configs` | - |
 | **Docs** | [`docs/`](docs/) | `//docs:site` | `//docs:serve` / `//docs:site_test` |
 
@@ -86,6 +87,12 @@ func main() {
 ```
 
 ### Python
+```bash
+pip install modenv-rc
+# or
+uv add modenv-rc
+```
+
 ```python
 from dataclasses import dataclass
 from modenv import load
