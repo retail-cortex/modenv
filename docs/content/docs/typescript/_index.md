@@ -12,6 +12,6 @@ The TypeScript client library of `modenv` is located in `clients/typescript/`. I
   - `modenv.ts`: Core configuration loader and cryptographic functions.
   - `index.ts`: Module entrypoint.
 - `clients/typescript/test/`: Unit and integration test suites using `node:test`.
-- `clients/typescript/package.json`: NPM package descriptor.
+- `clients/typescript/package.json`: pnpm package descriptor.
 
 See [TypeScript Integration Guide](integration/) for usage instructions and code examples.

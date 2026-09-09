@@ -221,7 +221,7 @@ This release introduces polyglot client packages, centralized test configuration
 - **Centralized Test Configs**: Test fixtures previously in `test/` now live under `test/configs/` (`//test:test_configs`).
 
 ### 3. Tooling & Build System
-- **Makefile Deprecation**: The top-level `Makefile` has been retired. Use standard Bazel commands (`bazel build //...`, `bazel test //...`) or language-native workflows (`uv run pytest`, `mvn test`, `npm test`, `go test ./...`).
+- **Makefile Deprecation**: The top-level `Makefile` has been retired. Use standard Bazel commands (`bazel build //...`, `bazel test //...`) or language-native workflows (`uv run pytest`, `mvn test`, `pnpm test`, `go test ./...`).
 
 ---
 

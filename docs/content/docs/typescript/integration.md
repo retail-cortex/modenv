@@ -19,7 +19,7 @@ js_library(
 )
 ```
 
-### With pnpm / npm
+### With pnpm
 ```bash
 pnpm add @retail-cortex/modenv
 ```

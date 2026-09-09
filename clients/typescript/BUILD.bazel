@@ -12,26 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
+load("@pnpm//:defs.bzl", "npm_link_all_packages")
 
 package(default_visibility = ["//visibility:public"])
 
-filegroup(
-    name = "typescript_sources",
-    srcs = glob([
-        "src/**",
-        "test/**",
-        "package.json",
-        "tsconfig.json",
-        "node_modules/**",
-    ]),
+npm_link_all_packages(name = "node_modules")
+
+ts_project(
+    name = "typescript_lib",
+    srcs = glob(
+        [
+            "src/**/*.ts",
+            "test/**/*.ts",
+        ],
+    ),
+    declaration = True,
+    declaration_map = True,
+    out_dir = "dist",
+    source_map = True,
+    transpiler = "tsc",
+    tsconfig = "tsconfig.json",
+    deps = [
+        ":node_modules/@types/node",
+        ":node_modules/smol-toml",
+        ":node_modules/typescript",
+    ],
 )
 
-sh_test(
+js_test(
     name = "modenv_test",
-    srcs = ["test.sh"],
     data = [
-        ":typescript_sources",
+        ":node_modules",
+        ":typescript_lib",
         "//test:test_configs",
+    ],
+    entry_point = "test/run_tests.mjs",
+    no_copy_to_bin = ["//test:test_configs"],
+    node_options = [
+        "--security-revert=CVE-2023-46809",
     ],
 )

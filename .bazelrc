@@ -1,1 +1,2 @@
 test --test_env=PATH
+common --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
