@@ -19,12 +19,12 @@ Previous versions of `modenv` used a single XOR cipher indicated by the `xor:` p
 ### Modernizing to `simple://`
 The symmetric XOR cipher has been standardized under the `simple://` URI scheme. To update existing secrets:
 ```bash
-# Encrypt using the modern simple:// scheme
-modenv encode --type=simple "my-plaintext-password"
+# Encrypt using the modern simple:// scheme (prompts securely for secret)
+modenv encode --type=simple
 # Output: simple://01000704...
 
 # Legacy xor: format can still be emitted when needed
-modenv encode --legacy "my-plaintext-password"
+modenv encode --legacy
 # Output: xor:01000704...
 ```
 

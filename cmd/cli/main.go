@@ -15,9 +15,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 
@@ -26,10 +29,10 @@ import (
 )
 
 func main() {
-	os.Exit(run(os.Args, os.Stdout, os.Stderr))
+	os.Exit(run(os.Args, os.Stdin, os.Stdout, os.Stderr))
 }
 
-func run(args []string, stdout, stderr io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) < 2 {
 		printHelp(stdout)
 		return 1
@@ -42,7 +45,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	case "read":
 		return runRead(stdout, stderr)
 	case "encode", "--encode":
-		return runEncode(args, stdout, stderr)
+		return runEncode(args, stdin, stdout, stderr)
 	case "help", "-h", "--help":
 		printHelp(stdout)
 		return 0
@@ -59,11 +62,11 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w, "Commands:")
 	fmt.Fprintln(w, "  setup                         Create initial configuration files if they do not exist")
 	fmt.Fprintln(w, "  read                          Show the resolved configuration tree for the current MODENV_RUNTIME")
-	fmt.Fprintln(w, "  encode [flags] <value>        Encode a secret value (prefixed with simple:// or pks://)")
+	fmt.Fprintln(w, "  encode [flags]                Encode a secret value via secure interactive prompt")
 	fmt.Fprintln(w, "    --type, -t <simple|pks>     Encryption type (default: simple)")
 	fmt.Fprintln(w, "    --public-key, -k <path>     RSA public key PEM file for pks type")
 	fmt.Fprintln(w, "    --legacy                    Produce legacy xor: prefix")
-	fmt.Fprintln(w, "  --encode <val>                Alias for encode")
+	fmt.Fprintln(w, "  --encode                      Alias for encode")
 	fmt.Fprintln(w, "  help                          Show this help message")
 }
 
@@ -157,11 +160,11 @@ func runRead(stdout, stderr io.Writer) int {
 	return 0
 }
 
-func runEncode(args []string, stdout, stderr io.Writer) int {
+func runEncode(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	var encType = "simple"
 	var pubKeyPath = ""
 	var legacy = false
-	var secret = ""
+	var hasPositionalArg = false
 
 	for i := 2; i < len(args); i++ {
 		arg := args[i]
@@ -178,26 +181,23 @@ func runEncode(args []string, stdout, stderr io.Writer) int {
 			i++
 			pubKeyPath = args[i]
 		} else if !strings.HasPrefix(arg, "-") {
-			secret = arg
+			hasPositionalArg = true
 		}
 	}
 
-	if secret == "" {
-		fmt.Fprintf(stderr, "Error: Missing secret to encode. Usage: modenv encode [--type=simple|pks] [--public-key=<path>] <secret-value>\n")
+	if hasPositionalArg {
+		fmt.Fprintln(stderr, "Error: Passing secret values directly on the command line is disabled to prevent exposure in shell history.")
+		fmt.Fprintln(stderr, "Please run 'modenv encode' without a secret argument to be prompted securely.")
 		return 1
 	}
 
-	if legacy {
-		fmt.Fprintln(stdout, modenv.EncryptLegacySecret(secret))
-		return 0
+	if encType != "simple" && encType != "pks" {
+		fmt.Fprintf(stderr, "Error: Unknown encryption type %q (supported: simple, pks)\n", encType)
+		return 1
 	}
 
-	switch encType {
-	case "simple":
-		fmt.Fprintln(stdout, modenv.EncryptSecret(secret))
-		return 0
-	case "pks":
-		var pubKeyPEM string
+	var pubKeyPEM string
+	if encType == "pks" {
 		if pubKeyPath != "" {
 			data, err := os.ReadFile(resolvePath(pubKeyPath))
 			if err != nil {
@@ -211,7 +211,40 @@ func runEncode(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "Error: PKS encryption requires --public-key=<path> or MODENV_PUBLIC_KEY environment variable\n")
 			return 1
 		}
+	}
 
+	reader := bufio.NewReader(stdin)
+
+	secret, err := readPassword("Enter secret: ", reader, stdin, stderr)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error reading secret: %v\n", err)
+		return 1
+	}
+	if secret == "" {
+		fmt.Fprintln(stderr, "Error: Secret cannot be empty")
+		return 1
+	}
+
+	confirm, err := readPassword("Confirm secret: ", reader, stdin, stderr)
+	if err != nil {
+		fmt.Fprintf(stderr, "Error reading confirmation: %v\n", err)
+		return 1
+	}
+	if secret != confirm {
+		fmt.Fprintln(stderr, "Error: Secrets do not match")
+		return 1
+	}
+
+	if legacy {
+		fmt.Fprintln(stdout, modenv.EncryptLegacySecret(secret))
+		return 0
+	}
+
+	switch encType {
+	case "simple":
+		fmt.Fprintln(stdout, modenv.EncryptSecret(secret))
+		return 0
+	case "pks":
 		encoded, err := modenv.EncryptPKSSecret(secret, pubKeyPEM)
 		if err != nil {
 			fmt.Fprintf(stderr, "Error encrypting secret: %v\n", err)
@@ -220,9 +253,46 @@ func runEncode(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stdout, encoded)
 		return 0
 	default:
-		fmt.Fprintf(stderr, "Error: Unknown encryption type %q (supported: simple, pks)\n", encType)
 		return 1
 	}
+}
+
+func readPassword(prompt string, reader *bufio.Reader, stdin io.Reader, promptWriter io.Writer) (string, error) {
+	if promptWriter != nil {
+		fmt.Fprint(promptWriter, prompt)
+	}
+
+	if f, ok := stdin.(*os.File); ok {
+		cmd := exec.Command("stty", "-echo")
+		cmd.Stdin = f
+		if err := cmd.Run(); err == nil {
+			sigChan := make(chan os.Signal, 1)
+			signal.Notify(sigChan, os.Interrupt)
+			defer func() {
+				signal.Stop(sigChan)
+				cmdEcho := exec.Command("stty", "echo")
+				cmdEcho.Stdin = f
+				_ = cmdEcho.Run()
+				if promptWriter != nil {
+					fmt.Fprintln(promptWriter)
+				}
+			}()
+			go func() {
+				if _, ok := <-sigChan; ok {
+					cmdEcho := exec.Command("stty", "echo")
+					cmdEcho.Stdin = f
+					_ = cmdEcho.Run()
+					os.Exit(130)
+				}
+			}()
+		}
+	}
+
+	line, err := reader.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+	return strings.TrimRight(line, "\r\n"), nil
 }
 
 func resolvePath(filename string) string {

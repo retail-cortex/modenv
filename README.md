@@ -153,8 +153,8 @@ bazel test //...
 # Build all binaries and libraries
 bazel build //...
 
-# Run the universal CLI (Go)
-bazel run //cmd/cli -- encode "my_db_password"
+# Run the universal CLI (Go) to securely encode a secret via prompt
+bazel run //cmd/cli -- encode
 
 # Build static documentation site
 bazel build //docs:site
@@ -196,10 +196,10 @@ This release introduces polyglot client packages, centralized test configuration
 - **Backward Compatibility for `xor:`**: Existing encrypted secrets starting with `xor:<hex>` continue to decrypt transparently with zero breaking changes.
 - **Migration to `simple://`**: The standard symmetric XOR scheme now uses the `simple://` URI prefix. To migrate legacy values:
   ```bash
-  # Generate modern simple:// secret
-  bazel run //cmd/cli -- encode "my-secret-value"
+  # Generate modern simple:// secret (prompts securely for value)
+  bazel run //cmd/cli -- encode
   # Legacy prefix is still available if needed
-  bazel run //cmd/cli -- encode --legacy "my-secret-value"
+  bazel run //cmd/cli -- encode --legacy
   ```
 - **New Asymmetric RSA (`pks://`) & Cloud (`cloud://`) Schemes**:
   - Encrypt secrets using RSA public keys via `pks://` for asymmetric decryption at runtime.

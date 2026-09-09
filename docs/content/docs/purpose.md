@@ -64,7 +64,7 @@ Every configuration lookup follows an uncompromising three-tier cascading hierar
 
 ### 2.3 In-Place Secret Decryption
 Sensitive credentials (database passwords, API tokens, service keys) can be stored directly within TOML files prefixed with `xor:`:
-- Tokens are encrypted via `modenv encode <secret>` or language-specific APIs.
+- Tokens are encrypted via `modenv encode` (via secure interactive prompt) or language-specific APIs.
 - At runtime, `modenv` detects the `xor:` prefix and decrypts the value in-memory using `MODENV_KEY`.
 - No plaintext passwords ever need to exist in checked-in configuration files.
 

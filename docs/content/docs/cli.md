@@ -33,8 +33,10 @@ modenv read
 MODENV_RUNTIME=production modenv read
 ```
 
-### `encode [options] <value>`
+### `encode [options]`
 Encrypts a sensitive plaintext string into a smart secret URI token that can be safely committed to `.env.toml` or runtime overlays.
+
+To protect against shell history leaks (`.bash_history`, `.zsh_history`) and process table eavesdropping, `modenv encode` requires entering and confirming the secret via secure masked prompt rather than as a command-line argument.
 
 #### Options:
 - `-t, --type <simple|pks>`: Secret encryption algorithm. Defaults to `simple`.
@@ -43,15 +45,21 @@ Encrypts a sensitive plaintext string into a smart secret URI token that can be 
 
 ```bash
 # Simple XOR secret (simple://...)
-modenv encode "production-db-password"
+modenv encode
+# Enter secret: ********
+# Confirm secret: ********
 # Output: simple://01000704...
 
 # Legacy XOR prefix (xor:...)
-modenv encode --legacy "production-db-password"
+modenv encode --legacy
+# Enter secret: ********
+# Confirm secret: ********
 # Output: xor:01000704...
 
 # Asymmetric RSA Public Key Secret (pks://...)
-modenv encode --type=pks --public-key=keys/app_public.pem "production-db-password"
+modenv encode --type=pks --public-key=keys/app_public.pem
+# Enter secret: ********
+# Confirm secret: ********
 # Output: pks://grKhOtE7TXQNSt3bht5iatVOf...
 ```
 

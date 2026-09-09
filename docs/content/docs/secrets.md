@@ -58,7 +58,8 @@ Lightweight obfuscation suitable for non-critical developer environments and bas
 - **Algorithm**: Cyclic byte-wise XOR against `MODENV_KEY` (fallback: `modenv-default-key`).
 - **Generation**:
   ```bash
-  modenv encode --type=simple "my-password"
+  modenv encode --type=simple
+  # Prompts: Enter secret, Confirm secret
   # Output: simple://01000704...
   ```
 
@@ -73,7 +74,8 @@ Enterprise-grade asymmetric encryption using RSA PKCS#1 v1.5:
   3. `[secrets_store] key_location`: Path specified in `.env.toml` (resolved relative to `MODENV_PREFIX`).
 - **Generation**:
   ```bash
-  modenv encode --type=pks --public-key=keys/app_public.pem "super-secret-db-pass"
+  modenv encode --type=pks --public-key=keys/app_public.pem
+  # Prompts: Enter secret, Confirm secret
   # Output: pks://grKhOtE7TXQNSt3bht5iatVOf/...
   ```
 
@@ -175,14 +177,14 @@ console.log("Resolved Cloud:", config.database.cloud_password);
 The universal Go CLI provides subcommands and flags to generate and inspect smart secrets:
 
 ```bash
-# Encrypt with simple XOR
-modenv encode --type=simple "my-plaintext-secret"
+# Encrypt with simple XOR (prompts and confirms secret interactively)
+modenv encode --type=simple
 
 # Encrypt with legacy xor: prefix
-modenv encode --legacy "my-plaintext-secret"
+modenv encode --legacy
 
 # Encrypt with RSA public key
-modenv encode --type=pks --public-key=path/to/public.pem "my-plaintext-secret"
+modenv encode --type=pks --public-key=path/to/public.pem
 
 # Inspect and verify resolved configuration including all decrypted secrets
 modenv read

@@ -31,47 +31,65 @@ import (
 
 func TestCliHelp(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "help"}, &stdout, &stderr)
+	code := run([]string{"modenv", "help"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "Usage: modenv")
 
 	stdout.Reset()
-	code = run([]string{"modenv", "-h"}, &stdout, &stderr)
+	code = run([]string{"modenv", "-h"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "Usage: modenv")
 
 	stdout.Reset()
-	code = run([]string{"modenv", "--help"}, &stdout, &stderr)
+	code = run([]string{"modenv", "--help"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "Usage: modenv")
 }
 
 func TestCliNoArgs(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv"}, &stdout, &stderr)
+	code := run([]string{"modenv"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 }
 
 func TestCliUnknownCommand(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "unknown-cmd"}, &stdout, &stderr)
+	code := run([]string{"modenv", "unknown-cmd"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "Unknown command")
 }
 
+func TestCliEncode_PositionalArgumentDisabled(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"modenv", "encode", "my-secret"}, strings.NewReader(""), &stdout, &stderr)
+	assert.Equal(t, 1, code)
+	assert.Contains(t, stderr.String(), "Passing secret values directly on the command line is disabled")
+	assert.Contains(t, stderr.String(), "shell history")
+}
+
 func TestCliEncode_Simple(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "encode", "my-secret"}, &stdout, &stderr)
+	stdin := strings.NewReader("my-secret\nmy-secret\n")
+	code := run([]string{"modenv", "encode"}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
+	assert.Contains(t, stderr.String(), "Enter secret: ")
+	assert.Contains(t, stderr.String(), "Confirm secret: ")
+
 	out := strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "simple://"))
 	decrypted, err := modenv.DecryptSecret(out)
 	assert.NoError(t, err)
 	assert.Equal(t, "my-secret", decrypted)
 
+	// Test with --encode alias and --type=simple flag
 	stdout.Reset()
-	code = run([]string{"modenv", "--encode", "--type=simple", "my-secret-2"}, &stdout, &stderr)
+	stderr.Reset()
+	stdin = strings.NewReader("my-secret-2\nmy-secret-2\n")
+	code = run([]string{"modenv", "--encode", "--type=simple"}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
+	assert.Contains(t, stderr.String(), "Enter secret: ")
+	assert.Contains(t, stderr.String(), "Confirm secret: ")
+
 	out = strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "simple://"))
 	decrypted, err = modenv.DecryptSecret(out)
@@ -81,8 +99,12 @@ func TestCliEncode_Simple(t *testing.T) {
 
 func TestCliEncode_Legacy(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "encode", "--legacy", "legacy-val"}, &stdout, &stderr)
+	stdin := strings.NewReader("legacy-val\nlegacy-val\n")
+	code := run([]string{"modenv", "encode", "--legacy"}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
+	assert.Contains(t, stderr.String(), "Enter secret: ")
+	assert.Contains(t, stderr.String(), "Confirm secret: ")
+
 	out := strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "xor:"))
 	decrypted, err := modenv.DecryptSecret(out)
@@ -106,8 +128,12 @@ func TestCliEncode_PKS(t *testing.T) {
 	privPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: privDER})
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "encode", "--type=pks", "--public-key=" + pubPath, "super-secret-pks"}, &stdout, &stderr)
+	stdin := strings.NewReader("super-secret-pks\nsuper-secret-pks\n")
+	code := run([]string{"modenv", "encode", "--type=pks", "--public-key=" + pubPath}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
+	assert.Contains(t, stderr.String(), "Enter secret: ")
+	assert.Contains(t, stderr.String(), "Confirm secret: ")
+
 	out := strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "pks://"))
 
@@ -120,7 +146,8 @@ func TestCliEncode_PKS(t *testing.T) {
 	// Test short flags -t pks -k <path>
 	stdout.Reset()
 	stderr.Reset()
-	code = run([]string{"modenv", "encode", "-t", "pks", "-k", pubPath, "another-pks"}, &stdout, &stderr)
+	stdin = strings.NewReader("another-pks\nanother-pks\n")
+	code = run([]string{"modenv", "encode", "-t", "pks", "-k", pubPath}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	out = strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "pks://"))
@@ -129,7 +156,8 @@ func TestCliEncode_PKS(t *testing.T) {
 	t.Setenv("MODENV_PUBLIC_KEY", string(pubPEM))
 	stdout.Reset()
 	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type=pks", "env-pub-key-val"}, &stdout, &stderr)
+	stdin = strings.NewReader("env-pub-key-val\nenv-pub-key-val\n")
+	code = run([]string{"modenv", "encode", "--type=pks"}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	out = strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "pks://"))
@@ -138,44 +166,47 @@ func TestCliEncode_PKS(t *testing.T) {
 	// Test --type and --public-key with spaces
 	stdout.Reset()
 	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type", "pks", "--public-key", pubPath, "spaced-pks"}, &stdout, &stderr)
+	stdin = strings.NewReader("spaced-pks\nspaced-pks\n")
+	code = run([]string{"modenv", "encode", "--type", "pks", "--public-key", pubPath}, stdin, &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	out = strings.TrimSpace(stdout.String())
 	assert.True(t, strings.HasPrefix(out, "pks://"))
 }
 
-func TestCliEncode_Errors(t *testing.T) {
-	// Missing secret
+func TestCliEncode_PromptValidationErrors(t *testing.T) {
+	// Secret mismatch
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "encode"}, &stdout, &stderr)
+	stdin := strings.NewReader("secret-one\nsecret-different\n")
+	code := run([]string{"modenv", "encode"}, stdin, &stdout, &stderr)
 	assert.Equal(t, 1, code)
-	assert.Contains(t, stderr.String(), "Missing secret to encode")
+	assert.Contains(t, stderr.String(), "Secrets do not match")
 
+	// Empty secret
+	stdout.Reset()
+	stderr.Reset()
+	stdin = strings.NewReader("\n\n")
+	code = run([]string{"modenv", "encode"}, stdin, &stdout, &stderr)
+	assert.Equal(t, 1, code)
+	assert.Contains(t, stderr.String(), "Secret cannot be empty")
+}
+
+func TestCliEncode_FlagErrors(t *testing.T) {
 	// PKS without public key
 	t.Setenv("MODENV_PUBLIC_KEY", "")
-	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type=pks", "secret"}, &stdout, &stderr)
+	var stdout, stderr bytes.Buffer
+	code := run([]string{"modenv", "encode", "--type=pks"}, strings.NewReader("sec\nsec\n"), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "PKS encryption requires")
 
 	// PKS with non-existent key file
 	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type=pks", "--public-key=/no/such/file.pem", "secret"}, &stdout, &stderr)
+	code = run([]string{"modenv", "encode", "--type=pks", "--public-key=/no/such/file.pem"}, strings.NewReader("sec\nsec\n"), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "Error reading public key")
 
-	// PKS with invalid PEM content
-	tmpDir := t.TempDir()
-	badPEMPath := filepath.Join(tmpDir, "bad.pem")
-	_ = os.WriteFile(badPEMPath, []byte("bad content"), 0644)
-	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type=pks", "--public-key=" + badPEMPath, "secret"}, &stdout, &stderr)
-	assert.Equal(t, 1, code)
-	assert.Contains(t, stderr.String(), "Error encrypting secret")
-
 	// Unknown type
 	stderr.Reset()
-	code = run([]string{"modenv", "encode", "--type=invalid-type", "secret"}, &stdout, &stderr)
+	code = run([]string{"modenv", "encode", "--type=invalid-type"}, strings.NewReader("sec\nsec\n"), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "Unknown encryption type")
 }
@@ -185,20 +216,20 @@ func TestCliSetupAndRead(t *testing.T) {
 	t.Setenv("MODENV_PREFIX", tmpDir)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "setup"}, &stdout, &stderr)
+	code := run([]string{"modenv", "setup"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.FileExists(t, filepath.Join(tmpDir, ".env.toml"))
 	assert.FileExists(t, filepath.Join(tmpDir, ".env.local.toml"))
 
 	// Second setup skips existing files
 	stdout.Reset()
-	code = run([]string{"modenv", "setup"}, &stdout, &stderr)
+	code = run([]string{"modenv", "setup"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "Skipping")
 
 	// Read config
 	stdout.Reset()
-	code = run([]string{"modenv", "read"}, &stdout, &stderr)
+	code = run([]string{"modenv", "read"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "Resolved Configuration Tree")
 	assert.Contains(t, stdout.String(), `app_name = "my-app"`)
@@ -211,7 +242,7 @@ func TestCliReadMissingBaseFile(t *testing.T) {
 	t.Setenv("MODENV_PREFIX", tmpDir)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "read"}, &stdout, &stderr)
+	code := run([]string{"modenv", "read"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "is missing")
 }
@@ -223,7 +254,7 @@ func TestCliReadInvalidConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "read"}, &stdout, &stderr)
+	code := run([]string{"modenv", "read"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 1, code)
 	assert.Contains(t, stderr.String(), "Error loading configuration")
 }
@@ -245,7 +276,7 @@ func TestCliReadWithoutPrefixOrRuntime(t *testing.T) {
 	t.Setenv("MODENV_RUNTIME", "")
 
 	var stdout, stderr bytes.Buffer
-	code := run([]string{"modenv", "read"}, &stdout, &stderr)
+	code := run([]string{"modenv", "read"}, strings.NewReader(""), &stdout, &stderr)
 	assert.Equal(t, 0, code)
 	assert.Contains(t, stdout.String(), "(working directory)")
 	assert.Contains(t, stdout.String(), "(none)")

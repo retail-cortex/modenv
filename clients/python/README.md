@@ -181,15 +181,19 @@ modenv setup
 ```
 
 #### 2. Encrypt Secrets (`encode`)
-Encrypt sensitive strings before committing them to TOML files:
+Encrypt sensitive strings before committing them to TOML files. To prevent credentials from leaking into shell history (`.bash_history`, `.zsh_history`) or process listings, `modenv encode` prompts and confirms secrets interactively:
 
 ```bash
 # Encrypt with symmetric key (MODENV_KEY)
-modenv encode "my-database-password"
+modenv encode
+# Enter secret: ********
+# Confirm secret: ********
 # Output: simple://01000704...
 
 # Encrypt with asymmetric RSA public key
-modenv encode --type=pks --public-key=keys/public.pem "my-database-password"
+modenv encode --type=pks --public-key=keys/public.pem
+# Enter secret: ********
+# Confirm secret: ********
 # Output: pks://grKhOtE7TXQNSt3bht5iatVOf...
 ```
 
