@@ -14,6 +14,9 @@
 
 name: Release
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     tags:
@@ -35,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Determine Release Tag
         id: tag_step
@@ -50,17 +53,12 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Resolved release tag: ${TAG}"
 
-      - name: Install Bazelisk
-        uses: bazelbuild/setup-bazelisk@v3
-
-      - name: Cache Bazel Cache
-        uses: actions/cache@v4
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
-          path: |
-            ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-release-${{ hashFiles('**/MODULE.bazel', '**/BUILD.bazel') }}
-          restore-keys: |
-            ${{ runner.os }}-bazel-release-
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
 
       - name: Verify Go Test Suite via Bazel
         run: bazel test //clients/go/... //cmd/cli/...
@@ -114,7 +112,7 @@ jobs:
           cd ..
 
       - name: Upload Release Assets Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: release-assets
           path: release-assets/
