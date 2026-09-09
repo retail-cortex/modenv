@@ -1,0 +1,134 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Publish Python Package to PyPI
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+      - 'python-v*'
+      - 'modenv-python-v*'
+      - 'modenv-*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'PyPI environment to publish to'
+        required: true
+        type: choice
+        default: 'pypi'
+        options:
+          - pypi
+          - testpypi
+      version:
+        description: 'Optional version override (e.g. 0.1.0, defaults to tag or pyproject.toml)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Python Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Determine & Update Version
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [ -z "$VERSION" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${{ github.ref_name }}"
+            VERSION=$(echo "$TAG" | sed -E 's/^(modenv-python-v|python-v|modenv-v|modenv-|v)//')
+          fi
+
+          if [ -n "$VERSION" ]; then
+            echo "Applying release version: ${VERSION}"
+            python3 -c "
+          import re, sys
+          ver = sys.argv[1]
+          path = 'clients/python/pyproject.toml'
+          with open(path, 'r') as f:
+              content = f.read()
+          updated = re.sub(r'version\s*=\s*\"[^\"]+\"', f'version = \"{ver}\"', content, count=1)
+          with open(path, 'w') as f:
+              f.write(updated)
+          " "$VERSION"
+          else
+            echo "Using version declared in pyproject.toml"
+          fi
+
+      - name: Build Source Distribution and Wheel
+        run: |
+          mkdir -p dist
+          cd clients/python
+          uv build --out-dir ../../dist
+
+      - name: Verify Build Artifacts
+        run: |
+          ls -la dist/
+          if [ ! -f dist/*.whl ] || [ ! -f dist/*.tar.gz ]; then
+            echo "Expected wheel and tar.gz in dist/"
+            exit 1
+          fi
+
+      - name: Upload Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          retention-days: 7
+
+  publish:
+    name: Publish to PyPI (${{ github.event.inputs.environment || 'pypi' }})
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'pypi' }}
+      url: ${{ (github.event.inputs.environment == 'testpypi') && 'https://test.pypi.org/p/modenv' || 'https://pypi.org/p/modenv' }}
+    permissions:
+      id-token: write # Mandatory for PyPI OIDC Trusted Publishing
+    steps:
+      - name: Download Package Distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to TestPyPI
+        if: github.event.inputs.environment == 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+
+      - name: Publish to PyPI
+        if: github.event.inputs.environment != 'testpypi'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
