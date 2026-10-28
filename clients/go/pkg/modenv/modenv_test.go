@@ -26,7 +26,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rrmcguinness/modenv/pkg/modenv"
+	"github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 	"github.com/stretchr/testify/assert"
 )
 

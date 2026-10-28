@@ -1,10 +1,10 @@
-module github.com/rrmcguinness/modenv/cmd/cli
+module github.com/retail-cortex/modenv/cmd/cli
 
 go 1.26.3
 
 require (
 	github.com/BurntSushi/toml v1.6.0
-	github.com/rrmcguinness/modenv v0.0.0
+	github.com/retail-cortex/modenv/clients/go v0.0.0
 	github.com/stretchr/testify v1.11.1
 )
 
@@ -14,4 +14,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/rrmcguinness/modenv => ../../clients/go
+replace github.com/retail-cortex/modenv/clients/go => ../../clients/go

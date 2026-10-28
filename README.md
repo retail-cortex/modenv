@@ -67,7 +67,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/rrmcguinness/modenv/pkg/modenv"
+	"github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 )
 
 type Config struct {
@@ -222,7 +222,7 @@ This release introduces polyglot client packages, centralized test configuration
 ### 2. Workspace Layout & Monorepo Structure
 - **Go Client Relocation**: Go client code has moved from `pkg/modenv/` to `clients/go/pkg/modenv/`.
   - **Bazel dependencies**: Update Bazel targets from `@modenv//pkg/modenv` to `@modenv//clients/go/pkg/modenv`.
-  - **Go modules**: The module import path remains `github.com/rrmcguinness/modenv/pkg/modenv`.
+  - **Go modules**: The module is `github.com/retail-cortex/modenv/clients/go` (it was `github.com/rrmcguinness/modenv`), tagged `clients/go/vX.Y.Z`: `go get github.com/retail-cortex/modenv/clients/go@latest`, and import `github.com/retail-cortex/modenv/clients/go/pkg/modenv`.
 - **Polyglot Ecosystem**: Native clients are now available for [Python](clients/python/), [Java](clients/java/), and [TypeScript](clients/typescript/).
 - **Universal CLI Target**: The CLI binary target has transitioned from `//cmd/modenv` to `//cmd/cli` (or root alias `//:modenv`).
 - **Centralized Test Configs**: Test fixtures previously in `test/` now live under `test/configs/` (`//test:test_configs`).

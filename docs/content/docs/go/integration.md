@@ -21,7 +21,7 @@ go_library(
 
 ### With Go Modules
 ```bash
-go get github.com/retail-cortex/modenv/go
+go get github.com/retail-cortex/modenv/clients/go@latest
 ```
 
 ## Basic Map Loading
@@ -33,7 +33,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/rrmcguinness/modenv/pkg/modenv"
+	"github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 )
 
 func main() {
@@ -56,7 +56,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/rrmcguinness/modenv/pkg/modenv"
+	"github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 )
 
 type Config struct {
@@ -93,7 +93,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/rrmcguinness/modenv/pkg/modenv"
+	"github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 )
 
 func main() {
