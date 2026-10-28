@@ -1,4 +1,4 @@
-module github.com/rrmcguinness/modenv
+module github.com/retail-cortex/modenv/clients/go
 
 go 1.26.3
 

@@ -68,7 +68,7 @@ deps = ["@modenv//clients/go/pkg/modenv"]
 ```
 If importing via standard Go modules, the Go module path remains unchanged:
 ```go
-import "github.com/rrmcguinness/modenv/pkg/modenv"
+import "github.com/retail-cortex/modenv/clients/go/pkg/modenv"
 ```
 
 ---

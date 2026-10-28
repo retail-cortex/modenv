@@ -17,7 +17,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "modenv",
     srcs = ["modenv.go"],
-    importpath = "github.com/rrmcguinness/modenv/pkg/modenv",
+    importpath = "github.com/retail-cortex/modenv/clients/go/pkg/modenv",
     visibility = ["//visibility:public"],
     deps = ["@com_github_burntsushi_toml//:toml"],
 )
